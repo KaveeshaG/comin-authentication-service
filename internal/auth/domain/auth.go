@@ -22,6 +22,7 @@ type AuthResponse struct {
 	TokenType      string    `json:"token_type"`
 	ExpiresIn      int64     `json:"expires_in"`
 	OrganizationID uuid.UUID `json:"organization_id"`
+	Role           string    `json:"role"`
 }
 
 type ErrorResponse struct {

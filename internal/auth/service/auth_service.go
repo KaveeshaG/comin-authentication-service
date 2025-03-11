@@ -128,11 +128,12 @@ func (s *AuthService) generateTokens(user *domain.User) (*domain.AuthResponse, e
 	}
 
 	return &domain.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    int64(time.Hour * 24 / time.Second),
+		AccessToken:    accessToken,
+		RefreshToken:   refreshToken,
+		TokenType:      "Bearer",
+		ExpiresIn:      int64(time.Hour * 24 / time.Second),
 		OrganizationID: user.OrganizationID,
+		Role:           user.Role,
 	}, nil
 }
 
