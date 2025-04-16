@@ -1,17 +1,33 @@
-FROM golang:1.21-alpine AS builder
-WORKDIR /app
-RUN apk add --no-cache git make
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN make build
+FROM golang:1.16 AS builder
 
-FROM alpine:3.18
-RUN apk --no-cache add ca-certificates tzdata
+# Set the GOPATH to /app
+ENV GOPATH=/app
+
+# Move to /app
 WORKDIR /app
-COPY --from=builder /app/cmd/auth/main /app/auth-service
-COPY --from=builder /app/.air.toml /app/
-COPY --from=builder /app/.env /app/
-ENV GO_ENV=production
+
+# Copy go.mod and go.sum
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Build the application
+RUN go build -o main ./cmd/auth
+
+# Use an official Alpine Linux image for the production environment
+FROM alpine:latest
+
+# Move to /app
+WORKDIR /app
+
+# Copy the binary from the builder
+COPY --from=builder /app/main .
+
+# Expose the port
 EXPOSE 8080
-CMD ["/app/auth-service"]
+
+CMD ["./main"]
