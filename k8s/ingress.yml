@@ -6,30 +6,16 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
   - host: comin.kaveeshagimhana.com
     http:
       paths:
-      - path: /api/v1/auth/login
-        pathType: Exact
-        backend:
-          service:
-            name: comin-authentication-service
-            port:
-              number: 80  # Replace with your service port
-      - path: /api/v1/auth/.*
-        pathType: ImplementationSpecific
+      - path: /api(/|$)(.*)
+        pathType: Prefix
         backend:
           service:
             name: comin-authentication-service
             port:
               number: 80
-      - path: /api/.*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: comin-authentication-service
-            port:
-              number: 80  
