@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: comin
+metadata:
+  name: comin-authentication-service
+  labels:
+    app: comin-authentication-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: comin-authentication-service
+  template:
+    metadata:
+      labels:
+        app: comin-authentication-service
+    spec:
+      containers:
+      - name: comin-authentication-service
+        image: 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GO_ENV
+          value: "development"
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+          requests:
+            cpu: "0.2"
+            memory: "256Mi"
+      imagePullPolicy: Always

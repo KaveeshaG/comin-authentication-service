@@ -11,16 +11,21 @@ jobs:
           command: |
             go mod download
             # go test ./...
-            # We'll use your existing Dockerfile instead of building manually
+      - run:
+          name: Configure insecure registry
+          command: |
+            # Create docker config to allow insecure registry
+            mkdir -p ~/.docker
+            echo '{"insecure-registries": ["192.168.1.144:5000"]}' > ~/.docker/config.json
       - run:
           name: Build and push Docker image
           command: |
-            # Using your existing Dockerfile
             docker build -t 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} .
             
+            # Try to push with increasing timeouts
             docker push --timeout 120s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} || \
-            docker push --timeout 180s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
-
+            docker push --timeout 180s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} || \
+            docker push --timeout 300s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
   deploy:
     docker:
       - image: cimg/base:2023.12
@@ -35,18 +40,24 @@ jobs:
       - run:
           name: Deploy to Kubernetes
           command: |
-            # If you're using kubectl apply with files:
+            # Create kubernetes directory if it doesn't exist
+            mkdir -p k8s
+            
+            # Copy the deployment template files from the repo
+            cp kubernetes/deployment.yaml k8s/deployment.yaml
+            cp kubernetes/service.yaml k8s/service.yaml
+            
+            # Replace the image tag with the current commit SHA
             envsubst < k8s/deployment.yaml > k8s/deployment-with-tag.yaml
+            
+            # Apply the Kubernetes configurations
             kubectl apply -f k8s/deployment-with-tag.yaml
             kubectl apply -f k8s/service.yaml
             
-            # Or if you're updating an existing deployment:
-            # kubectl set image deployment/comin-authentication-service comin-authentication-service=192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
-            # kubectl rollout status deployment/comin-authentication-service
-
+            # Wait for the deployment to complete
+            kubectl rollout status deployment/comin-authentication-service
 orbs:
   kubernetes: circleci/kubernetes@1.3
-
 workflows:
   version: 2
   build-and-deploy:
