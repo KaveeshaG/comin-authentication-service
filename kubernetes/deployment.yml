@@ -1,6 +1,5 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: comin
 metadata:
   name: comin-authentication-service
   labels:
@@ -17,12 +16,12 @@ spec:
     spec:
       containers:
       - name: comin-authentication-service
-        image: 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
+        image: 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1}
         ports:
         - containerPort: 8080
         env:
         - name: GO_ENV
-          value: "development"
+          value: "production"
         resources:
           limits:
             cpu: "0.5"

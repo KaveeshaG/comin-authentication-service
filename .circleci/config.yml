@@ -7,35 +7,47 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
+          name: Install Tailscale
+          command: |
+            curl -fsSL https://tailscale.com/install.sh | sudo sh
+            sudo tailscale up --authkey $TAILSCALE_AUTHKEY
+      - run:
           name: Build Go application
           command: |
             go mod download
-            # go test ./...
+            # Fix go.mod file if needed
+            # If you had the Go version issue, uncomment this:
+            # sed -i 's/go 1.23.4/go 1.22/' go.mod
       - run:
           name: Login to Docker Registry
           command: |
-            echo $DOCKER_PASSWORD | docker login 192.168.1.144:5000 -u $DOCKER_USERNAME --password-stdin
+            echo $DOCKER_PASSWORD | docker login 100.93.125.5:5000 -u $DOCKER_USERNAME --password-stdin
       - run:
           name: Configure insecure registry
           command: |
             # Create docker config to allow insecure registry
             mkdir -p ~/.docker
-            echo '{"insecure-registries": ["192.168.1.144:5000"]}' > ~/.docker/config.json
+            echo '{"insecure-registries": ["100.93.125.5:5000"]}' > ~/.docker/config.json
       - run:
           name: Build and push Docker image
           command: |
-            docker build -t 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} .
+            docker build -t 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1} .
             
             # Try to push with increasing timeouts
-            docker push --timeout 120s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} || \
-            docker push --timeout 180s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} || \
-            docker push --timeout 300s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
+            docker push --timeout 120s 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1} || \
+            docker push --timeout 180s 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1} || \
+            docker push --timeout 300s 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1}
   deploy:
     docker:
       - image: cimg/base:2023.12
     steps:
       - checkout
       - kubernetes/install-kubectl
+      - run:
+          name: Install Tailscale
+          command: |
+            curl -fsSL https://tailscale.com/install.sh | sudo sh
+            sudo tailscale up --authkey $TAILSCALE_AUTHKEY
       - run:
           name: Setup Kubernetes config
           command: |
