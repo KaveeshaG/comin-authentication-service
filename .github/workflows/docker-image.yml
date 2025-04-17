@@ -48,7 +48,6 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         
-    # Add these steps for Kubernetes deployment
     - name: Set up kubectl
       if: github.event_name != 'pull_request'
       uses: azure/setup-kubectl@v3
@@ -63,15 +62,10 @@ jobs:
     - name: Update Kubernetes deployment image
       if: github.event_name != 'pull_request'
       run: |
-        # Get the image tag that was just built (first tag from the list)
-        IMAGE_ID=$(echo ${{ steps.meta.outputs.tags }} | cut -d' ' -f1)
-        
-        # Update deployment directly without modifying YAML
-        # First apply all Kubernetes resources
+        IMAGE_ID=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+        echo "Using image: $IMAGE_ID"
+    
+        # Apply Kubernetes resources
         kubectl apply -f k8s/
-        
-        # Then update the image
-        kubectl set image deployment/comin-authentication-service comin-authentication-service=$IMAGE_ID -n default
-        
-        # Wait for rollout to complete
-        kubectl rollout status deployment/comin-authentication-service -n default --timeout=120s
+    
+        kubectl set image deployment/comin-authentication-service comin-authentication-service=$IMAGE_ID -n comin
