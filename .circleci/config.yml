@@ -10,7 +10,9 @@ jobs:
           name: Install Tailscale
           command: |
             curl -fsSL https://tailscale.com/install.sh | sudo sh
-            sudo tailscale up --authkey $TAILSCALE_AUTHKEY
+            sudo tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
+            sleep 5 
+            sudo tailscale up --authkey $TAILSCALE_AUTHKEY --accept-routes --accept-dns=false
       - run:
           name: Build Go application
           command: |
