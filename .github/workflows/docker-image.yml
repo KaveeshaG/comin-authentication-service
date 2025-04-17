@@ -68,4 +68,4 @@ jobs:
         # Apply Kubernetes resources
         kubectl apply -f k8s/
     
-        kubectl set image deployment/comin-authentication-service comin-authentication-service=$IMAGE_ID -n comin
+        kubectl set image deployment/comin-authentication-service comin-authentication-service=$IMAGE_ID -n comin-dev
