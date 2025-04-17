@@ -15,8 +15,7 @@ FROM alpine:3.18
 RUN apk --no-cache add ca-certificates tzdata
 WORKDIR /app
 COPY --from=builder /app/main /app/auth-service
-COPY --from=builder /app/.air.toml /app/ 2>/dev/null || true
-COPY --from=builder /app/.env /app/ 2>/dev/null || true
-ENV GO_ENV=production
+
+ENV GO_ENV=development
 EXPOSE 8080
 CMD ["/app/auth-service"]
