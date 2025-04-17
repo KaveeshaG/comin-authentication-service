@@ -7,13 +7,6 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: Install Tailscale
-          command: |
-            curl -fsSL https://tailscale.com/install.sh | sudo sh
-            sudo tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
-            sleep 5 
-            sudo tailscale up --authkey $TAILSCALE_AUTHKEY --accept-routes --accept-dns=false
-      - run:
           name: Build Go application
           command: |
             go mod download
@@ -21,24 +14,29 @@ jobs:
             # If you had the Go version issue, uncomment this:
             # sed -i 's/go 1.23.4/go 1.22/' go.mod
       - run:
-          name: Login to Docker Registry
-          command: |
-            echo $DOCKER_PASSWORD | docker login 100.93.125.5:5000 -u $DOCKER_USERNAME --password-stdin
-      - run:
           name: Configure insecure registry
           command: |
             # Create docker config to allow insecure registry
             mkdir -p ~/.docker
-            echo '{"insecure-registries": ["100.93.125.5:5000"]}' > ~/.docker/config.json
+            echo '{"insecure-registries": ["192.168.1.144:5000"]}' > ~/.docker/config.json
+            # Add your server IP to known hosts if needed
+            mkdir -p ~/.ssh
+            echo "${SERVER_IP_FINGERPRINT}" >> ~/.ssh/known_hosts
+      - run:
+          name: Login to Docker Registry
+          command: |
+            echo $DOCKER_PASSWORD | docker login 192.168.1.144:5000 -u $DOCKER_USERNAME --password-stdin
       - run:
           name: Build and push Docker image
           command: |
-            docker build -t 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1} .
+            # Export server IP as environment variable for use in build if needed
+            export SERVER_IP=192.168.1.144
+            docker build -t 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} .
             
             # Try to push with increasing timeouts
-            docker push --timeout 120s 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1} || \
-            docker push --timeout 180s 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1} || \
-            docker push --timeout 300s 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1}
+            docker push --timeout 120s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} || \
+            docker push --timeout 180s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} || \
+            docker push --timeout 300s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
   deploy:
     docker:
       - image: cimg/base:2023.12
@@ -46,15 +44,12 @@ jobs:
       - checkout
       - kubernetes/install-kubectl
       - run:
-          name: Install Tailscale
-          command: |
-            curl -fsSL https://tailscale.com/install.sh | sudo sh
-            sudo tailscale up --authkey $TAILSCALE_AUTHKEY
-      - run:
           name: Setup Kubernetes config
           command: |
             echo $KUBECONFIG_DATA | base64 --decode > kubeconfig.yaml
             export KUBECONFIG=kubeconfig.yaml
+            # Export server IP for use in deployment
+            export SERVER_IP=192.168.1.144
       - run:
           name: Deploy to Kubernetes
           command: |
@@ -65,7 +60,8 @@ jobs:
             cp kubernetes/deployment.yaml k8s/deployment.yaml
             cp kubernetes/service.yaml k8s/service.yaml
             
-            # Replace the image tag with the current commit SHA
+            # Replace the image tag with the current commit SHA and inject SERVER_IP if needed
+            export SERVER_IP=192.168.1.144
             envsubst < k8s/deployment.yaml > k8s/deployment-with-tag.yaml
             
             # Apply the Kubernetes configurations
