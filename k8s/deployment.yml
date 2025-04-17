@@ -23,7 +23,7 @@ spec:
         - containerPort: 8080
         env:
         - name: GO_ENV
-          value: "production"
+          value: "development"
         resources:
           limits:
             cpu: "0.5"
