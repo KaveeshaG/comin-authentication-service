@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23.4-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache git
 
@@ -8,7 +8,7 @@ ENV GO111MODULE=on
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-# Assuming your Makefile has a build command, otherwise replace with direct build
+# Direct build command
 RUN go build -o main ./cmd/auth
 
 FROM alpine:3.18
