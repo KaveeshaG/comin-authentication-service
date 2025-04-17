@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: Service
-namespace: comin
 metadata:
   name: comin-authentication-service
+  namespace: comin
 spec:
   selector:
     app: comin-authentication-service

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: comin-authentication-service
+  namespace: comin
   labels:
     app: comin-authentication-service
 spec:
@@ -16,7 +17,8 @@ spec:
     spec:
       containers:
       - name: comin-authentication-service
-        image: 100.93.125.5:5000/comin-authentication-service:${CIRCLE_SHA1}
+        image: ghcr.io/kaveeshag/comin-authentication-service:dev
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
@@ -29,4 +31,3 @@ spec:
           requests:
             cpu: "0.2"
             memory: "256Mi"
-      imagePullPolicy: Always
