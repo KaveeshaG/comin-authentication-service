@@ -1,6 +1,6 @@
 module github.com/Axontik/comin-authentication-service
 
-go 1.23.4
+go 1.22
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
