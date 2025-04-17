@@ -5,19 +5,30 @@ jobs:
       - image: cimg/go:1.21
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          # This is important for connecting to private registries
+          docker_layer_caching: true
+          version: 20.10.14
+      - run:
+          name: Configure Docker for insecure registry
+          command: |
+            # Create a Docker daemon configuration file to allow insecure registry
+            mkdir -p $HOME/.docker
+            echo '{"insecure-registries": ["192.168.1.144:5000"]}' > $HOME/.docker/config.json
+            # Restart Docker to apply settings (in CircleCI's remote Docker this is usually not needed)
       - run:
           name: Build Go application
           command: |
             go mod download
-            # go test ./...
-            # We'll use your existing Dockerfile instead of building manually
       - run:
           name: Build and push Docker image
           command: |
             # Using your existing Dockerfile
             docker build -t 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} .
-            docker push 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
+            
+            # Increase timeout for Docker push
+            docker push --timeout 120s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1} || \
+            docker push --timeout 180s 192.168.1.144:5000/comin-authentication-service:${CIRCLE_SHA1}
 
   deploy:
     docker:
