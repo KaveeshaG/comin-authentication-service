@@ -6,17 +6,30 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, OPTIONS, DELETE"
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
   - host: comin.kaveeshagimhana.com
     http:
       paths:
-      - path: /api(/|$)(.*)
-        pathType: Prefix
+      - path: /api/v1/auth/login
+        pathType: Exact
+        backend:
+          service:
+            name: comin-authentication-service
+            port:
+              number: 80  # Replace with your service port
+      - path: /api/v1/auth/.*
+        pathType: ImplementationSpecific
         backend:
           service:
             name: comin-authentication-service
             port:
               number: 80
+      - path: /api/.*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: comin-authentication-service
+            port:
+              number: 80  
