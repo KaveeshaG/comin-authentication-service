@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: comin-authentication-service
-  namespace: comin
+  namespace: comin-dev
   labels:
     app: comin-authentication-service
 spec:
