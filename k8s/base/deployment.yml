@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: comin-authentication-service
-        image: ghcr.io/kaveeshag/comin-authentication-service:074b124929be270c50f672a86416108e7944bd00
+        image: ghcr.io/kaveeshag/comin-authentication-service:80aaf1d0926b19663d9b6f7af5523573f358796a
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
