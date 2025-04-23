@@ -47,25 +47,38 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        
-    - name: Set up kubectl
-      if: github.event_name != 'pull_request'
-      uses: azure/setup-kubectl@v3
+
+    - name: Update Kubernetes resources
+      run: |
+        cd k8s/base
+        sed -i "s|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:.*|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:${{ github.sha }}|" deployment.yml
+
+    - name: Commit changes
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'actions@github.com'
+        git add k8s/base/deployment.yml
+        git commit -m "Update image tag to ${{ github.sha }}"
+        git push
+
+    # - name: Set up kubectl
+    #   if: github.event_name != 'pull_request'
+    #   uses: azure/setup-kubectl@v3
       
-    - name: Configure Kubernetes config
-      if: github.event_name != 'pull_request'
-      run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-        chmod 600 $HOME/.kube/config
+    # - name: Configure Kubernetes config
+    #   if: github.event_name != 'pull_request'
+    #   run: |
+    #     mkdir -p $HOME/.kube
+    #     echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+    #     chmod 600 $HOME/.kube/config
         
-    - name: Update Kubernetes deployment image
-      if: github.event_name != 'pull_request'
-      run: |
-        IMAGE_ID=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
-        echo "Using image: $IMAGE_ID"
+    # - name: Update Kubernetes deployment image
+    #   if: github.event_name != 'pull_request'
+    #   run: |
+    #     IMAGE_ID=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+    #     echo "Using image: $IMAGE_ID"
     
-        # Apply Kubernetes resources
-        kubectl apply -f k8s/
+    #     # Apply Kubernetes resources
+    #     kubectl apply -f k8s/
     
-        kubectl set image deployment/comin-authentication-service comin-authentication-service=$IMAGE_ID -n comin-dev
+    #     kubectl set image deployment/comin-authentication-service comin-authentication-service=$IMAGE_ID -n comin-dev
