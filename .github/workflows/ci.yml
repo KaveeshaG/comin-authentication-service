@@ -55,8 +55,8 @@ jobs:
 
     - name: Commit changes
       run: |
-        git config --global user.name 'GitHub Actions'
-        git config --global user.email 'actions@github.com'
+        git config --global user.name 'KaveeshaG'
+        git config --global user.email 'uakaveeshagimhana@gmail.com'
         git add k8s/base/deployment.yml
         git commit -m "Update image tag to ${{ github.sha }}"
         git push
