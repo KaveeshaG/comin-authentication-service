@@ -9,7 +9,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: api.comin.kaveeshagimhana.com
+  - host: comin.kaveeshagimhana.com
     http:
       paths:
       - path: /
