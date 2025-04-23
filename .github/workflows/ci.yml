@@ -9,7 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      # Build and push Docker image
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       
@@ -36,7 +35,6 @@ jobs:
           cd k8s/base
           sed -i "s|image: ghcr.io/.*/comin-authentication-service:.*|image: ghcr.io/${{ steps.repo_owner.outputs.lowercase_owner }}/comin-authentication-service:${{ github.sha }}|" deployment.yml
       
-      # Commit and push the updated manifests
       - name: Commit changes
         run: |
           git config --global user.name 'GitHub Actions'
