@@ -1,84 +1,40 @@
-name: Build and Push Docker Image
-
+# .github/workflows/ci.yml
+name: CI
 on:
   push:
-    branches: [ "dev" ]
-  pull_request:
-    branches: [ "dev" ]
-
+    branches: [dev]
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
       
-    - name: Login to GitHub Container Registry
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
-    - name: Extract Docker metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ghcr.io/${{ github.repository_owner }}/comin-authentication-service
-        tags: |
-          type=sha,format=short
-          type=ref,event=branch
-          type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-    
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-    - name: Update Kubernetes resources
-      run: |
-        cd k8s/base
-        sed -i "s|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:.*|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:${{ github.sha }}|" deployment.yml
-
-    - name: Commit changes
-      run: |
-        git config --global user.name 'KaveeshaG'
-        git config --global user.email 'uakaveeshagimhana@gmail.com'
-        git add k8s/base/deployment.yml
-        git commit -m "Update image tag to ${{ github.sha }}"
-        git push
-
-    # - name: Set up kubectl
-    #   if: github.event_name != 'pull_request'
-    #   uses: azure/setup-kubectl@v3
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:${{ github.sha }}
       
-    # - name: Configure Kubernetes config
-    #   if: github.event_name != 'pull_request'
-    #   run: |
-    #     mkdir -p $HOME/.kube
-    #     echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-    #     chmod 600 $HOME/.kube/config
-        
-    # - name: Update Kubernetes deployment image
-    #   if: github.event_name != 'pull_request'
-    #   run: |
-    #     IMAGE_ID=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
-    #     echo "Using image: $IMAGE_ID"
-    
-    #     # Apply Kubernetes resources
-    #     kubectl apply -f k8s/
-    
-    #     kubectl set image deployment/comin-authentication-service comin-authentication-service=$IMAGE_ID -n comin-dev
+      - name: Update Kubernetes resources
+        run: |
+          cd k8s/base
+          sed -i "s|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:.*|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:${{ github.sha }}|" deployment.yml
+      
+      - name: Commit changes
+        run: |
+          git config --global user.name 'KaveeshaG'
+          git config --global user.email 'uakaveeshagimhana@gmail.com'
+          git add k8s/base/deployment.yml
+          git commit -m "Update image tag to ${{ github.sha }}"
+          git push
