@@ -2,13 +2,14 @@
 name: CI
 on:
   push:
-    branches: [dev]
+    branches: [main]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       
+      # Build and push Docker image
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       
@@ -19,22 +20,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
+      - name: Convert repository owner to lowercase
+        id: repo_owner
+        run: echo "lowercase_owner=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:${{ github.sha }}
+          tags: ghcr.io/${{ steps.repo_owner.outputs.lowercase_owner }}/comin-authentication-service:${{ github.sha }}
       
       - name: Update Kubernetes resources
         run: |
           cd k8s/base
-          sed -i "s|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:.*|image: ghcr.io/${{ github.repository_owner }}/comin-authentication-service:${{ github.sha }}|" deployment.yml
+          sed -i "s|image: ghcr.io/.*/comin-authentication-service:.*|image: ghcr.io/${{ steps.repo_owner.outputs.lowercase_owner }}/comin-authentication-service:${{ github.sha }}|" deployment.yml
       
+      # Commit and push the updated manifests
       - name: Commit changes
         run: |
-          git config --global user.name 'KaveeshaG'
-          git config --global user.email 'uakaveeshagimhana@gmail.com'
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
           git add k8s/base/deployment.yml
           git commit -m "Update image tag to ${{ github.sha }}"
           git push
